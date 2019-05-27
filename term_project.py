@@ -1,4 +1,3 @@
-# TODO: How_to_run.txt
 import numpy as np
 import csv
 import warnings
@@ -82,9 +81,8 @@ def preprocessing(Xtra, Xtst):
     return Xtra_reduced, Xtst_reduced
 
 
-def trainModel(Xtra_r, Ytra):
-    # train model using logistic regression
-    model = LogisticRegression(solver='lbfgs')
+def trainModel(Xtra_r, Ytra, model):
+    # train model using given model
     model.fit(Xtra_r, Ytra)
     return model
 
@@ -104,23 +102,30 @@ def writeOutput(prediction, filename):
             id += 1
 
 
+# RandomForestClassifier gives lots of warnings
+# therefore this line is added below
 warnings.filterwarnings("ignore")
+# Load data
 Xtra, Xtst, Ytra = loadData('train.csv', 'test.csv')
+# Preprocessing
 Xtra_reduced, Xtst_reduced = preprocessing(Xtra, Xtst)
-model_lr = trainModel(Xtra_reduced, Ytra)
+# Train LinearRegression model
+model_lr = trainModel(Xtra_reduced, Ytra, lr)
 print("Classifiers cross-validation")
 
 # Classifiers cross-validation
 labels_clf = ['RandomForest', 'ExtraTrees', 'KNeighbors', 'SVC', 'Ridge', 'LinearRegression', 'GaussianNB',
               'DecisionTree']
+# Each of models would be trained and their
+# cross validation score would be printed.
 for model, label in zip([rf, et, knn, svc, rg, model_lr, gnb, dt], labels_clf):
     scores = cross_val_score(model, Xtra_reduced, Ytra, cv=5, scoring='accuracy')
-    model.fit(Xtra_reduced, Ytra)
-    prediction = predict(model, Xtst_reduced)
+    trained_model = trainModel(Xtra_reduced, Ytra, model)
+    prediction = predict(trained_model, Xtst_reduced)
     writeOutput(prediction, label + ".csv")
     print("Mean: {0:.3f}, std: {1:.3f} [{2} is used.]".format(scores.mean(), scores.std(), label))
 
-print("-----------------------------------\n\n")
+print("-----------------------------------\n")
 print("Bagging, Boosting and GridSearchCV cross-validation")
 
 # Bagging, Boosting and GridSearchCV cross-validation
@@ -131,7 +136,7 @@ for model, label in zip([ada_boost, ada_boost_svc, grad_boost, xgb_boost, eclf, 
     if label == 'Grid':
         print("Beware: Grid takes long time!")
     scores = cross_val_score(model, Xtra_reduced, Ytra, cv=5, scoring='accuracy')
-    model.fit(Xtra_reduced, Ytra)
-    prediction = predict(model, Xtst_reduced)
+    trained_model = trainModel(Xtra_reduced, Ytra, model)
+    prediction = predict(trained_model, Xtst_reduced)
     writeOutput(prediction, label + ".csv")
     print("Mean: {0:.3f}, std: {1:.3f} [{2} is used.]".format(scores.mean(), scores.std(), label))
